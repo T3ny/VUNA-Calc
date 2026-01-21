@@ -100,6 +100,7 @@ body {
   box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
   font-size: 1rem;
   line-height: 1.4;
+  transition: opacity 0.3s ease;
 }
 
 /* Button Styles */

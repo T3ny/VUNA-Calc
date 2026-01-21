@@ -94,7 +94,15 @@ function updateResult() {
     let numValue = parseFloat(left);
     if (!isNaN(numValue)) {
       let wordsResult = numberToWords(numValue);
-      document.getElementById("word-result").innerHTML = wordsResult;
+      const wordResultElement = document.getElementById("word-result");
+
+      // Add fade-in animation
+      wordResultElement.style.opacity = "0";
+      wordResultElement.innerHTML = wordsResult;
+
+      setTimeout(() => {
+        wordResultElement.style.opacity = "1";
+      }, 100);
     }
   } else {
     document.getElementById("word-result").innerHTML = "";
@@ -205,3 +213,108 @@ function numberToWords(num) {
 
   return result;
 }
+// Add visual feedback for button presses
+function addButtonFeedback() {
+  const buttons = document.querySelectorAll(".calc-btn");
+  buttons.forEach((button) => {
+    button.addEventListener("mousedown", function () {
+      this.style.transform = "scale(0.95)";
+    });
+
+    button.addEventListener("mouseup", function () {
+      this.style.transform = "scale(1)";
+    });
+
+    button.addEventListener("mouseleave", function () {
+      this.style.transform = "scale(1)";
+    });
+  });
+}
+
+// Initialize button feedback when page loads
+document.addEventListener("DOMContentLoaded", function () {
+  addButtonFeedback();
+
+  // Add keyboard support
+  document.addEventListener("keydown", function (event) {
+    const key = event.key;
+
+    if (key >= "0" && key <= "9") {
+      appendToResult(key);
+    } else if (key === ".") {
+      appendToResult(".");
+    } else if (key === "+") {
+      operatorToResult("+");
+    } else if (key === "-") {
+      operatorToResult("-");
+    } else if (key === "*") {
+      operatorToResult("*");
+    } else if (key === "/") {
+      event.preventDefault(); // Prevent browser search
+      operatorToResult("/");
+    } else if (key === "Enter" || key === "=") {
+      calculateResult();
+    } else if (key === "Escape" || key === "c" || key === "C") {
+      clearResult();
+    } else if (key === "Backspace") {
+      backspace();
+    }
+  });
+});
+
+// Enhanced error handling
+function showError(message) {
+  const wordResult = document.getElementById("word-result");
+  wordResult.innerHTML = `<span style="color: #e74c3c;">Error: ${message}</span>`;
+  setTimeout(() => {
+    wordResult.innerHTML = "";
+  }, 3000);
+}
+
+// Improved calculateResult with better error handling
+function calculateResultEnhanced() {
+  if (left && operator && right) {
+    let leftNum = parseFloat(left);
+    let rightNum = parseFloat(right);
+
+    if (isNaN(leftNum) || isNaN(rightNum)) {
+      showError("Invalid number");
+      return;
+    }
+
+    let result;
+
+    switch (operator) {
+      case "+":
+        result = leftNum + rightNum;
+        break;
+      case "-":
+        result = leftNum - rightNum;
+        break;
+      case "*":
+        result = leftNum * rightNum;
+        break;
+      case "/":
+        if (rightNum === 0) {
+          showError("Cannot divide by zero");
+          return;
+        }
+        result = leftNum / rightNum;
+        break;
+      default:
+        return;
+    }
+
+    // Round to avoid floating point precision issues
+    result = Math.round(result * 1000000000) / 1000000000;
+
+    // Update display and reset for next calculation
+    left = result.toString();
+    operator = "";
+    right = "";
+    updateResult();
+  }
+}
+
+// Replace the original calculateResult function
+calculateResult = calculateResultEnhanced;
