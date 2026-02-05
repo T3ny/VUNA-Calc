@@ -1,25 +1,17 @@
 // ------------------------------
-// Theme Toggle Logic
+// Global Variables
 // ------------------------------
-function toggleTheme() {
-    const body = document.body;
-    const btn = document.getElementById('theme-toggle');
-
-    body.classList.toggle('dark-mode');
-
-    if (body.classList.contains('dark-mode')) {
-        btn.innerHTML = '☀️';
-        btn.title = 'Switch to light mode';
-        localStorage.setItem('theme', 'dark');
-    } else {
-        btn.innerHTML = '🌙';
-        btn.title = 'Switch to dark mode';
-        localStorage.setItem('theme', 'light');
-    }
-}
-
+var left = '';
+var operator = '';
+var right = '';
 var currentExpression = '';
+let scientificMode = false;
+let steps = [];
+const MAX_STEPS = 6;
 
+// ------------------------------
+// Currency Rates & Unit Conversions
+// ------------------------------
 var currencyRates = {
   'USD': 1,
   'EUR': 0.92,
@@ -52,165 +44,115 @@ const unitConversions = {
   }
 };
 
-function convertUnit(type) {
-  if (type === 'length') {
-    const value = parseFloat(document.getElementById('length-value').value) || 0;
-    const fromUnit = document.getElementById('from-length').value;
-    const toUnit = document.getElementById('to-length').value;
-    
-    if (value === 0) {
-      document.getElementById('length-result').textContent = '0';
-      return;
-    }
-    
-    const meters = value * unitConversions['length'][fromUnit];
-    const result = meters / unitConversions['length'][toUnit];
-    document.getElementById('length-result').textContent = formatResult(result);
-    updateExampleConversion(result);
-  } 
-  else if (type === 'weight') {
-    const value = parseFloat(document.getElementById('weight-value').value) || 0;
-    const fromUnit = document.getElementById('from-weight').value;
-    const toUnit = document.getElementById('to-weight').value;
-    
-    if (value === 0) {
-      document.getElementById('weight-result').textContent = '0';
-      return;
-    }
-    
-    const kg = value * unitConversions['weight'][fromUnit];
-    const result = kg / unitConversions['weight'][toUnit];
-    document.getElementById('weight-result').textContent = formatResult(result);
-  } 
-  else if (type === 'temperature') {
-    const value = parseFloat(document.getElementById('temp-value').value) || 0;
-    const fromUnit = document.getElementById('from-temp').value;
-    const toUnit = document.getElementById('to-temp').value;
-    
-    let celsius;
-    if (fromUnit === 'C') {
-      celsius = value;
-    } else if (fromUnit === 'F') {
-      celsius = (value - 32) * 5/9;
-    } else if (fromUnit === 'K') {
-      celsius = value - 273.15;
-    }
-    
-    let result;
-    if (toUnit === 'C') {
-      result = celsius;
-    } else if (toUnit === 'F') {
-      result = celsius * 9/5 + 32;
-    } else if (toUnit === 'K') {
-      result = celsius + 273.15;
-    }
-    
-    document.getElementById('temp-result').textContent = formatResult(result);
-  }
-  else if (type === 'currency') {
-    const value = parseFloat(document.getElementById('currency-value').value) || 0;
-    const fromCurrency = document.getElementById('from-currency').value;
-    const toCurrency = document.getElementById('to-currency').value;
-    
-    if (value === 0 || !currencyRates[fromCurrency] || !currencyRates[toCurrency]) {
-      document.getElementById('currency-result').textContent = '0';
-      return;
-    }
-    
-    const usd = value / currencyRates[fromCurrency];
-    const result = usd * currencyRates[toCurrency];
-    document.getElementById('currency-result').textContent = formatResult(result);
-  }
-}
-
-// Initialize converter displays on load
-window.addEventListener('DOMContentLoaded', function() {
-  try {
-    convertUnit('length');
-    convertUnit('weight');
-    convertUnit('temperature');
-    convertUnit('currency');
-  } catch (e) {
-    console.warn('Converter init error:', e);
-  }
-});
-
-function formatResult(value) {
-  return value.toFixed(4);
-}
-
-function updateExampleConversion(value) {
-  document.getElementById('example-result').textContent = formatResult(value);
-  document.getElementById('example-add').textContent = formatResult(value + 10);
-}
-
-function fetchCurrencyRates() {
-  const btn = document.getElementById('currency-refresh-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳';
-  }
-  
-  fetch('https://api.exchangerate-api.com/v4/latest/USD')
-    .then(response => response.json())
-    .then(data => {
-      if (data.rates) {
-        alert('Currency rates fetched successfully.');
-        console.log('Fetched currency rates:', data);    
-        // API returns rates relative to USD (1 USD = data.rates[currency])
-        currencyRates['EUR'] = data.rates.EUR || currencyRates['EUR'];
-        currencyRates['GBP'] = data.rates.GBP || currencyRates['GBP'];
-        currencyRates['JPY'] = data.rates.JPY || currencyRates['JPY'];
-        currencyRates['CAD'] = data.rates.CAD || currencyRates['CAD'];
-        currencyRates['AUD'] = data.rates.AUD || currencyRates['AUD'];
-        currencyRates['NGN'] = data.rates.NGN || currencyRates['NGN'];
-
-        const timestamp = new Date().toLocaleTimeString();
-        document.getElementById('currency-timestamp').textContent = `Last updated: ${timestamp}`;
-
-        convertUnit('currency');
-        if (btn) {
-          btn.textContent = '🔄';
-          btn.disabled = false;
-        }
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching currency rates:', error);
-      document.getElementById('currency-timestamp').textContent = 'Unable to fetch live rates';
-      if (btn) {
-        btn.textContent = '🔄';
-        btn.disabled = false;
-      }
-    });
-}
-
-// Set theme on page load from localStorage
-window.addEventListener('DOMContentLoaded', function () {
-    const theme = localStorage.getItem('theme');
+// ------------------------------
+// Theme Toggle Logic
+// ------------------------------
+function toggleTheme() {
     const body = document.body;
     const btn = document.getElementById('theme-toggle');
 
-    if (btn) {
-        if (theme === 'dark') {
-            body.classList.add('dark-mode');
-            btn.innerHTML = '☀️';
-            btn.title = 'Switch to light mode';
-        } else {
-            btn.innerHTML = '🌙';
-            btn.title = 'Switch to dark mode';
-        }
+    body.classList.toggle('dark-mode');
+
+    if (body.classList.contains('dark-mode')) {
+        btn.innerHTML = '☀️';
+        btn.title = 'Switch to light mode';
+        localStorage.setItem('theme', 'dark');
+    } else {
+        btn.innerHTML = '🌙';
+        btn.title = 'Switch to dark mode';
+        localStorage.setItem('theme', 'light');
     }
-});
+}
 
 // ------------------------------
-// Calculator State
+// Scientific Mode Toggle
 // ------------------------------
-let left = '';
-let operator = '';
-let right = '';
-let steps = [];
-const MAX_STEPS = 6;
+function toggleScientific() {
+    scientificMode = !scientificMode;
+    const scientificBtns = document.querySelectorAll('.scientific-btn');
+    const toggle = document.getElementById('science-toggle');
+    
+    scientificBtns.forEach(btn => {
+        btn.classList.toggle('show');
+    });
+    
+    toggle.textContent = scientificMode ? '🧮 Scientific Mode: ON' : '🧮 Scientific Mode';
+    toggle.classList.toggle('active', scientificMode);
+}
+
+// ------------------------------
+// Scientific Functions
+// ------------------------------
+function tangent() {
+    const num = parseFloat(currentExpression);
+    if (!isNaN(num)) {
+        currentExpression = Math.tan(num * Math.PI / 180).toFixed(6).toString();
+        updateResult();
+    }
+}
+
+function sine() {
+    const num = parseFloat(currentExpression);
+    if (!isNaN(num)) {
+        currentExpression = Math.sin(num * Math.PI / 180).toFixed(6).toString();
+        updateResult();
+    }
+}
+
+function cosine() {
+    const num = parseFloat(currentExpression);
+    if (!isNaN(num)) {
+        currentExpression = Math.cos(num * Math.PI / 180).toFixed(6).toString();
+        updateResult();
+    }
+}
+
+function factorial() {
+    const factorialCalc = (n) => {
+        if (n < 0) return NaN;
+        if (n === 0 || n === 1) return 1;
+        let result = 1;
+        for (let i = 2; i <= n; i++) result *= i;
+        return result;
+    };
+    
+    const num = parseInt(currentExpression);
+    if (!isNaN(num)) {
+        currentExpression = factorialCalc(num).toString();
+        updateResult();
+    }
+}
+
+function applyLogarithm() {
+    const num = parseFloat(currentExpression);
+    if (!isNaN(num) && num > 0) {
+        const result = Math.log10(num);
+        if (steps.length < MAX_STEPS) {
+            steps.push(`Step ${steps.length + 1}: log10(${num}) = ${result}`);
+        }
+        currentExpression = result.toString();
+        updateStepsDisplay();
+        updateResult();
+    } else {
+        alert('Please enter a positive number for logarithm');
+    }
+}
+
+function calculateSquare() {
+    const num = parseFloat(currentExpression);
+    if (!isNaN(num)) {
+        currentExpression = (num * num).toString();
+        updateResult();
+    }
+}
+
+function calculateCube() {
+    const num = parseFloat(currentExpression);
+    if (!isNaN(num)) {
+        currentExpression = (num * num * num).toString();
+        updateResult();
+    }
+}
 
 // ------------------------------
 // Basic Calculator Functions
@@ -239,8 +181,16 @@ function operatorToResult(value) {
     updateResult();
 }
 
+function percentToResult(value) {
+    currentExpression += '/100';
+    updateResult();
+}
+
 function clearResult() {
     currentExpression = '';
+    left = '';
+    right = '';
+    operator = '';
     document.getElementById('word-result').innerHTML = '';
     document.getElementById('word-area').style.display = 'none';
     updateResult();
@@ -265,54 +215,29 @@ function calculateResult() {
     }
 }
 
-function applyLogarithm() {
-  if (left.length === 0) return;
-
-  const num = parseFloat(left);
-  if (num <= 0) {
-    left = "Error";
-  } else {
-    const result = Math.log10(num);
-    if (steps.length < MAX_STEPS) {
-      steps.push(`Step ${steps.length + 1}: log10(${num}) = ${result}`);
-    }
-    left = result.toString();
-  }
-
-  right = "";
-  operator = "";
-  updateStepsDisplay();
-  updateResult();
-}
-
+// ------------------------------
+// Prime Number Functions
+// ------------------------------
 function isPrime(num) {
-  // Numbers less than 2 are not prime
-  if (num <= 1) {
-    return false;
-  }
+    if (num <= 1) return false;
+    if (num === 2) return true;
+    if (num % 2 === 0) return false;
 
-  if (num === 2) {
-    return true;
-  }
-
-  if (num % 2 === 0) {
-    return false;
-  }
-
-  const limit = Math.sqrt(num);
-  for (let i = 3; i <= limit; i += 2) {
-    if (num % i === 0) {
-      return false; 
+    const limit = Math.sqrt(num);
+    for (let i = 3; i <= limit; i += 2) {
+        if (num % i === 0) return false;
     }
-  }
-
-  return true;
+    return true;
 }
 
 function checkPrime() {
     const num = parseFloat(currentExpression);
     
-    if (isNaN(num) || !Number.isInteger(num) || num < 0 || currentExpression.includes(' ') || currentExpression.includes('+') || currentExpression.includes('-') || currentExpression.includes('*') || currentExpression.includes('/') || currentExpression.includes('^') || currentExpression.includes('(') || currentExpression.includes(')')) {
+    if (isNaN(num) || !Number.isInteger(num) || num < 0 || 
+        currentExpression.includes(' ') || currentExpression.includes('+') || 
+        currentExpression.includes('-') || currentExpression.includes('*') || 
+        currentExpression.includes('/') || currentExpression.includes('^') || 
+        currentExpression.includes('(') || currentExpression.includes(')')) {
         alert('Please enter a single positive whole number to check if it\'s prime');
         return;
     }
@@ -328,6 +253,43 @@ function checkPrime() {
     
     wordArea.style.display = 'flex';
     enableSpeakButton();
+}
+
+// ------------------------------
+// Factor Finder Functions
+// ------------------------------
+function factors(num) {
+    let result = [];
+    for (let i = 1; i <= num; i++) {
+        if (num % i === 0) result.push(i);
+    }
+    return result;
+}
+
+function factorPrimeCheck() {
+    const num = parseInt(currentExpression);
+    
+    if (isNaN(num) || num <= 0) {
+        alert("Please enter a valid positive number first!");
+        return;
+    }
+
+    const factorList = factors(num);
+    const primeCheck = isPrime(num);
+    
+    let message = `Factors of ${num}: ${factorList.join(', ')}\n`;
+    message += `Is ${num} prime? ${primeCheck ? 'Yes' : 'No'}`;
+
+    alert(message);
+    
+    steps.push(message);
+    if (steps.length > MAX_STEPS) steps.shift();
+    updateStepsDisplay();
+}
+
+function updateStepsDisplay() {
+    // Optional: implement if you have a steps display area
+    console.log('Steps:', steps);
 }
 
 // ------------------------------
@@ -456,130 +418,265 @@ function enableSpeakButton() {
     speakBtn.disabled = !hasContent;
 }
 
+// ------------------------------
+// Copy Result to Clipboard
+// ------------------------------
+function copyResult() {
+    const text = document.getElementById('result').value;
+    if (!text || text === '0') return;
 
-// Factor Finder & Prime Checker
-// Get factors of a number
-function factors(num) {
-    let result = [];
-    for (let i = 1; i <= num; i++) {
-        if (num % i === 0) result.push(i);
-    }
-    return result;
+    navigator.clipboard.writeText(text)
+        .then(() => alert('Result copied to clipboard!'))
+        .catch(() => alert('Failed to copy'));
 }
 
-// Main function to handle factor finding and prime checking
-function factorPrimeCheck() {
-    const numStr = left || right; // use current number or result
-    const num = parseInt(numStr);
+// ------------------------------
+// Voice Input Functions
+// ------------------------------
+function startVoiceInput() {
+    clearResult();
     
-    if (isNaN(num)) {
-        alert("Please enter a valid number first!");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Speech recognition not supported in this browser.");
         return;
     }
 
-    const factorList = factors(num);
-    const primeCheck = isPrime(num);
-// Prepare message
-    let message = `Factors of ${num}: ${factorList.join(', ')}\n`;
-    message += `Is ${num} prime? ${primeCheck ? 'Yes' : 'No'}`;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
 
-    // Push to steps and keep max 6
-    steps.push(message);
-    if (steps.length > 6) steps.shift();
+    recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        handleSpokenMath(spokenText);
+    };
 
-    updateStepsDisplay();
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        alert('Voice input error: ' + event.error);
+    };
+
+    recognition.start();
 }
-
-fetchCurrencyRates()
-
-function copyResult() {
-    const text = document.getElementById('result').value;
-    if (!text) return;
-
-    navigator.clipboard.writeText(text)
-    .then(() => alert('Result copied!'))
-    .catch(() => alert('Failed to copy'));
-}
-
-
-function startVoiceInput() {
-    clearResult()
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("Speech recognition not supported in this browser.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-
-  recognition.onresult = (event) => {
-    const spokenText = event.results[0][0].transcript;
-    handleSpokenMath(spokenText);
-  };
-
-  recognition.start();
-}
-
 
 function handleSpokenMath(text) {
-  const tokens = normalizeSpeech(text);
+    const tokens = normalizeSpeech(text);
 
-  tokens.forEach(token => {
-    if (["+","-","*","x","/"].includes(token)) {
-      operatorToResult(token);
-    
-    } else {
-      appendToResult(token);
-    }
-  });
+    tokens.forEach(token => {
+        if (["+", "-", "*", "x", "/"].includes(token)) {
+            operatorToResult(token);
+        } else {
+            appendToResult(token);
+        }
+    });
 }
-
 
 function normalizeSpeech(text) {
-  let normalized = text.toLowerCase();
+    let normalized = text.toLowerCase();
 
-  const replacements = {
-  "multiplied by": "*",
-  "divided by": "/",
-  "times": "*",
-  "x": "*",
-  "multiply": "*",
-  "plus": "+",
-  "add": "+",
-  "minus": "-",
-  "subtract": "-"
-};
+    const replacements = {
+        "multiplied by": "*",
+        "divided by": "/",
+        "times": "*",
+        "x": "*",
+        "multiply": "*",
+        "plus": "+",
+        "add": "+",
+        "minus": "-",
+        "subtract": "-"
+    };
 
+    for (let key in replacements) {
+        normalized = normalized.replaceAll(key, replacements[key]);
+    }
 
-  for (let key in replacements) {
-    normalized = normalized.replaceAll(key, replacements[key]);
-  }
+    const numbers = {
+        "zero": "0",
+        "one": "1",
+        "two": "2",
+        "three": "3",
+        "four": "4",
+        "five": "5",
+        "six": "6",
+        "seven": "7",
+        "eight": "8",
+        "nine": "9"
+    };
 
-  const numbers = {
-    "zero": "0",
-    "one": "1",
-    "two": "2",
-    "three": "3",
-    "four": "4",
-    "five": "5",
-    "six": "6",
-    "seven": "7",
-    "eight": "8",
-    "nine": "9"
-  };
+    for (let word in numbers) {
+        normalized = normalized.replaceAll(word, numbers[word]);
+    }
 
-  for (let word in numbers) {
-    normalized = normalized.replaceAll(word, numbers[word]);
-  }
+    normalized = normalized.replace(/([\+\-\*\/])/g, ' $1 ');
 
-  normalized = normalized.replace(/([\+\-\*\/])/g, ' $1 ');
-
-  // Split into tokens
-  return normalized
-    .split(" ")
-    .filter(t => t.trim() !== "");
+    return normalized.split(" ").filter(t => t.trim() !== "");
 }
+
+// ------------------------------
+// Unit Converter Functions
+// ------------------------------
+function convertUnit(type) {
+    if (type === 'length') {
+        const value = parseFloat(document.getElementById('length-value').value) || 0;
+        const fromUnit = document.getElementById('from-length').value;
+        const toUnit = document.getElementById('to-length').value;
+        
+        if (value === 0) {
+            document.getElementById('length-result').textContent = '0';
+            return;
+        }
+        
+        const meters = value * unitConversions['length'][fromUnit];
+        const result = meters / unitConversions['length'][toUnit];
+        document.getElementById('length-result').textContent = formatResult(result);
+        updateExampleConversion(result);
+    } 
+    else if (type === 'weight') {
+        const value = parseFloat(document.getElementById('weight-value').value) || 0;
+        const fromUnit = document.getElementById('from-weight').value;
+        const toUnit = document.getElementById('to-weight').value;
+        
+        if (value === 0) {
+            document.getElementById('weight-result').textContent = '0';
+            return;
+        }
+        
+        const kg = value * unitConversions['weight'][fromUnit];
+        const result = kg / unitConversions['weight'][toUnit];
+        document.getElementById('weight-result').textContent = formatResult(result);
+    } 
+    else if (type === 'temperature') {
+        const value = parseFloat(document.getElementById('temp-value').value) || 0;
+        const fromUnit = document.getElementById('from-temp').value;
+        const toUnit = document.getElementById('to-temp').value;
+        
+        let celsius;
+        if (fromUnit === 'C') {
+            celsius = value;
+        } else if (fromUnit === 'F') {
+            celsius = (value - 32) * 5/9;
+        } else if (fromUnit === 'K') {
+            celsius = value - 273.15;
+        }
+        
+        let result;
+        if (toUnit === 'C') {
+            result = celsius;
+        } else if (toUnit === 'F') {
+            result = celsius * 9/5 + 32;
+        } else if (toUnit === 'K') {
+            result = celsius + 273.15;
+        }
+        
+        document.getElementById('temp-result').textContent = formatResult(result);
+    }
+    else if (type === 'currency') {
+        const value = parseFloat(document.getElementById('currency-value').value) || 0;
+        const fromCurrency = document.getElementById('from-currency').value;
+        const toCurrency = document.getElementById('to-currency').value;
+        
+        if (value === 0 || !currencyRates[fromCurrency] || !currencyRates[toCurrency]) {
+            document.getElementById('currency-result').textContent = '0';
+            return;
+        }
+        
+        const usd = value / currencyRates[fromCurrency];
+        const result = usd * currencyRates[toCurrency];
+        document.getElementById('currency-result').textContent = formatResult(result);
+    }
+}
+
+function formatResult(value) {
+    return value.toFixed(4);
+}
+
+function updateExampleConversion(value) {
+    const exampleResult = document.getElementById('example-result');
+    const exampleAdd = document.getElementById('example-add');
+    
+    if (exampleResult) exampleResult.textContent = formatResult(value);
+    if (exampleAdd) exampleAdd.textContent = formatResult(value + 10);
+}
+
+// ------------------------------
+// Fetch Currency Rates
+// ------------------------------
+function fetchCurrencyRates() {
+    const btn = document.getElementById('currency-refresh-btn');
+    const timestampEl = document.getElementById('currency-timestamp');
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳';
+    }
+    
+    fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        .then(response => response.json())
+        .then(data => {
+            if (data.rates) {
+                currencyRates['EUR'] = data.rates.EUR || currencyRates['EUR'];
+                currencyRates['GBP'] = data.rates.GBP || currencyRates['GBP'];
+                currencyRates['JPY'] = data.rates.JPY || currencyRates['JPY'];
+                currencyRates['CAD'] = data.rates.CAD || currencyRates['CAD'];
+                currencyRates['AUD'] = data.rates.AUD || currencyRates['AUD'];
+                currencyRates['NGN'] = data.rates.NGN || currencyRates['NGN'];
+
+                const timestamp = new Date().toLocaleTimeString();
+                if (timestampEl) {
+                    timestampEl.textContent = `Last updated: ${timestamp}`;
+                }
+
+                convertUnit('currency');
+                
+                if (btn) {
+                    btn.textContent = '🔄';
+                    btn.disabled = false;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching currency rates:', error);
+            if (timestampEl) {
+                timestampEl.textContent = 'Unable to fetch live rates';
+            }
+            if (btn) {
+                btn.textContent = '🔄';
+                btn.disabled = false;
+            }
+        });
+}
+
+// ------------------------------
+// Page Load Event Listeners
+// ------------------------------
+window.addEventListener('DOMContentLoaded', function () {
+    // Set theme from localStorage
+    const theme = localStorage.getItem('theme');
+    const body = document.body;
+    const themeBtn = document.getElementById('theme-toggle');
+
+    if (themeBtn) {
+        if (theme === 'dark') {
+            body.classList.add('dark-mode');
+            themeBtn.innerHTML = '☀️';
+            themeBtn.title = 'Switch to light mode';
+        } else {
+            themeBtn.innerHTML = '🌙';
+            themeBtn.title = 'Switch to dark mode';
+        }
+    }
+
+    // Initialize unit converters
+    try {
+        convertUnit('length');
+        convertUnit('weight');
+        convertUnit('temperature');
+        convertUnit('currency');
+    } catch (e) {
+        console.warn('Converter init error:', e);
+    }
+
+    // Fetch currency rates on load
+    fetchCurrencyRates();
+});
